@@ -1,63 +1,54 @@
-import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanShop - QR Code Authentication</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #qr-reader { width: 300px; margin: auto; }
+        #result { font-size: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>ScanShop - Verify Product Authenticity</h1>
+    <div id="qr-reader"></div>
+    <p id="result">Scan a QR Code</p>
 
-void main() {
-  runApp(ScanShopApp());
-}
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-class ScanShopApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: QRScannerScreen(),
-    );
-  }
-}
+        // QR Scanner Setup
+        function onScanSuccess(qrCodeMessage) {
+            checkProduct(qrCodeMessage);
+        }
 
-class QRScannerScreen extends StatefulWidget {
-  @override
-  _QRScannerScreenState createState() => _QRScannerScreenState();
-}
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
 
-class _QRScannerScreenState extends State<QRScannerScreen> {
-  String scanResult = "Scan a QR Code";
-
-  void verifyProduct(String qrCode) async {
-    final doc = await FirebaseFirestore.instance.collection('products').doc(qrCode).get();
-    if (doc.exists) {
-      setState(() {
-        scanResult = "✅ Genuine Product: ${doc['name']}";
-      });
-    } else {
-      setState(() {
-        scanResult = "❌ Fake or Unverified Product";
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("ScanShop - QR Verification")),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: MobileScanner(
-              onDetect: (barcode, args) {
-                if (barcode.rawValue != null) {
-                  verifyProduct(barcode.rawValue!);
+        // Check Product Authenticity
+        function checkProduct(qrCode) {
+            db.collection("products").doc(qrCode).get().then((doc) => {
+                if (doc.exists) {
+                    document.getElementById("result").innerText = `✅ Genuine Product: ${doc.data().name}`;
+                } else {
+                    document.getElementById("result").innerText = "❌ Fake or Unverified Product";
                 }
-              },
-            ),
-          ),
-          SizedBox(height: 20),
-          Text(scanResult, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
+            });
+        }
+    </script>
+</body>
+</html>
