@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>ScanShop - QR Code Authentication</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #qr-reader { width: 300px; margin: auto; }
+        #qr-reader { width: 100%; max-width: 400px; margin: auto; }
         #result { font-size: 20px; margin-top: 20px; }
+        img { max-width: 100%; height: auto; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <h1>ScanShop - Verify Product Authenticity</h1>
+    <img src="https://www.scantrust.com/wp-content/uploads/2021/05/Scantrust-logo.png" alt="ScanTrust Logo">
+    <img src="https://authenticvision.com/wp-content/uploads/2020/10/Authnow_Logo.png" alt="AuthNow Logo">
+    <p>ScanShop is inspired by leading authentication technologies like <strong>ScanTrust</strong> and <strong>AuthNow</strong>. Our goal is to protect consumers by verifying product authenticity through QR code scanning.</p>
+    
     <div id="qr-reader"></div>
     <p id="result">Scan a QR Code</p>
 
@@ -37,7 +42,15 @@
         }
 
         const html5QrCode = new Html5Qrcode("qr-reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                html5QrCode.start(devices[0].id, config, onScanSuccess);
+            }
+        }).catch(err => {
+            console.error("Camera access error:", err);
+        });
 
         // Check Product Authenticity
         function checkProduct(qrCode) {
