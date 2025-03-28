@@ -1,0 +1,63 @@
+import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void main() {
+  runApp(ScanShopApp());
+}
+
+class ScanShopApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: QRScannerScreen(),
+    );
+  }
+}
+
+class QRScannerScreen extends StatefulWidget {
+  @override
+  _QRScannerScreenState createState() => _QRScannerScreenState();
+}
+
+class _QRScannerScreenState extends State<QRScannerScreen> {
+  String scanResult = "Scan a QR Code";
+
+  void verifyProduct(String qrCode) async {
+    final doc = await FirebaseFirestore.instance.collection('products').doc(qrCode).get();
+    if (doc.exists) {
+      setState(() {
+        scanResult = "✅ Genuine Product: ${doc['name']}";
+      });
+    } else {
+      setState(() {
+        scanResult = "❌ Fake or Unverified Product";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("ScanShop - QR Verification")),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: MobileScanner(
+              onDetect: (barcode, args) {
+                if (barcode.rawValue != null) {
+                  verifyProduct(barcode.rawValue!);
+                }
+              },
+            ),
+          ),
+          SizedBox(height: 20),
+          Text(scanResult, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
